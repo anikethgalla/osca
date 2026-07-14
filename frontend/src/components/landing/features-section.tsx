@@ -2,9 +2,10 @@ import React from "react";
 
 export default function FeaturesSection() {
   return (
-    <section id="how-it-works" className="w-full h-full bg-[#020503] text-white flex items-center select-none relative overflow-hidden py-24">
+    <section id="how-it-works" className="w-full h-full bg-[#020503] text-white flex items-center select-none relative overflow-hidden py-16 md:py-24">
       <div 
         className="absolute inset-0 opacity-[0.04] pointer-events-none z-0"
+        aria-hidden="true"
         style={{
           backgroundImage: `radial-gradient(circle at center, #ffffff 1px, transparent 1px)`,
           backgroundSize: '24px 24px'
@@ -31,7 +32,7 @@ export default function FeaturesSection() {
                 </p>
               </div>
               <div className="flex items-center gap-3 mt-6 bg-white/40 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-white/50 w-fit">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" aria-hidden="true">
                   <svg className="w-5 h-5 fill-[#e24329]" viewBox="0 0 24 24">
                     <path d="M23.955 13.582l-1.32-4.067-1.428-4.401c-.08-.246-.423-.246-.503 0L19.276 9.515H4.724L3.316 5.114c-.08-.246-.423-.246-.503 0L1.385 9.515.045 13.582c-.144.444.013.931.393 1.205l11.085 8.061c.219.16.511.16.73 0l11.085-8.061c.38-.274.537-.761.393-1.205z"/>
                   </svg>
@@ -52,14 +53,14 @@ export default function FeaturesSection() {
                 </p>
               </div>
               
-              <div className="absolute top-2 right-4 w-24 h-24 opacity-40 pointer-events-none">
+              <div className="absolute top-2 right-4 w-24 h-24 opacity-40 pointer-events-none" aria-hidden="true">
                 <svg viewBox="0 0 200 200" className="w-full h-full text-emerald-600/30 fill-current">
                   <path d="M 100, 100 m -60, 0 a 60,60 0 1,0 120,0 a 60,60 0 1,0 -120,0" stroke="currentColor" strokeWidth="18" fill="none" opacity="0.6" />
                   <path d="M 100, 100 m -45, 0 a 45,45 0 1,0 90,0 a 45,45 0 1,0 -90,0" stroke="currentColor" strokeWidth="6" fill="none" opacity="0.3" />
                 </svg>
               </div>
 
-              <div className="absolute right-0 bottom-0 w-[200px] bg-[#09150e] border-l border-t border-neutral-800 rounded-tl-xl p-3 font-sans text-[9px] text-neutral-400 select-none shadow-2xl">
+              <div className="absolute right-0 bottom-0 w-[200px] bg-[#09150e] border-l border-t border-neutral-800 rounded-tl-xl p-3 font-sans text-[9px] text-neutral-400 select-none shadow-2xl" aria-hidden="true">
                 <p className="text-white font-medium mb-1.5 truncate">
                   3,591 contributions in the last year
                 </p>
@@ -82,7 +83,7 @@ export default function FeaturesSection() {
                   Your repositories are analysed for multiple metrics to understand their needs
                 </p>
               </div>
-              <div className="absolute -bottom-6 -right-2 w-20 h-20 text-emerald-600/20 pointer-events-none rotate-12">
+              <div className="absolute -bottom-6 -right-2 w-20 h-20 text-emerald-600/20 pointer-events-none rotate-12" aria-hidden="true">
                 <svg fill="currentColor" viewBox="0 0 24 24" className="w-full h-full">
                   <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
                 </svg>
@@ -96,7 +97,7 @@ export default function FeaturesSection() {
                   Our matching engine pairs you with projects that align with your skills & interests
                 </p>
               </div>
-              <div className="absolute top-1/2 -right-6 w-16 h-16 text-emerald-700/10 pointer-events-none -translate-y-1/2">
+              <div className="absolute top-1/2 -right-6 w-16 h-16 text-emerald-700/10 pointer-events-none -translate-y-1/2" aria-hidden="true">
                 <svg fill="currentColor" viewBox="0 0 24 24" className="w-full h-full">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
                 </svg>
@@ -110,8 +111,8 @@ export default function FeaturesSection() {
                   Receive a personalized roadmap and start contributing
                 </p>
               </div>
-              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-32 h-10 bg-emerald-600/10 rounded-full blur-xl pointer-events-none" />
-              <div className="absolute -bottom-3 right-3 w-14 h-14 text-emerald-600/20 pointer-events-none">
+              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-32 h-10 bg-emerald-600/10 rounded-full blur-xl pointer-events-none" aria-hidden="true" />
+              <div className="absolute -bottom-3 right-3 w-14 h-14 text-emerald-600/20 pointer-events-none" aria-hidden="true">
                 <svg fill="currentColor" viewBox="0 0 24 24" className="w-full h-full">
                   <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
                 </svg>

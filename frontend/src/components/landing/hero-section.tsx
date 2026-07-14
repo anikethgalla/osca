@@ -3,7 +3,7 @@ import React from "react";
 export default function HeroSection() {
   return (
     <section id="home" className="relative w-full h-full bg-[#020503] flex flex-col overflow-hidden select-none">
-      <div className="absolute inset-0 pointer-events-none z-0">
+      <div className="absolute inset-0 pointer-events-none z-0" aria-hidden="true">
         <div
           className="absolute inset-0 bg-[radial-gradient(160%_140%_at_85%_25%,#104025_0%,#041e10_35%,#020503_70%)]"
         />
@@ -41,8 +41,8 @@ export default function HeroSection() {
             osca
           </div>
 
-          <div className="hidden lg:flex items-center gap-12 text-sm font-medium text-neutral-400">
-            <a href="#home" className="text-white transition-colors duration-200">Home</a>
+          <div className="hidden lg:flex items-center gap-12 text-sm font-medium text-neutral-400" aria-label="Main navigation">
+            <a href="#home" className="text-white transition-colors duration-200" aria-current="page">Home</a>
             <a href="#how-it-works" className="hover:text-white transition-colors duration-200 whitespace-nowrap">How it works</a>
             <a href="#about" className="hover:text-white transition-colors duration-200">About</a>
             <a href="#benefits" className="hover:text-white transition-colors duration-200">Benefits</a>
@@ -56,9 +56,9 @@ export default function HeroSection() {
         </nav>
       </div>
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 flex-1 grid grid-cols-1 lg:grid-cols-2 items-center gap-12 pb-16 pt-4">
-        <div className="flex flex-col justify-center w-full max-w-[620px] space-y-6">
-          <h1 className="text-4xl md:text-5xl lg:text-[56px] font-normal tracking-tight text-white leading-[1.15]">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 flex-1 flex flex-col lg:grid lg:grid-cols-2 items-center gap-12 pb-16 pt-12 md:pt-4">
+        <div className="flex flex-col justify-center w-full max-w-[620px] space-y-6 text-center lg:text-left mt-8 lg:mt-0">
+          <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-normal tracking-tight text-white leading-[1.15]">
             Lorem Ipsum Dolor sit{" "}
             <span className="font-serif italic text-neutral-300 block mt-2">
               is a dummy text used as a placeholder
@@ -67,22 +67,22 @@ export default function HeroSection() {
           <p className="text-base md:text-lg text-neutral-400 font-normal leading-relaxed max-w-md">
             An intelligent matchmaking layer that understands both sides and brings them together faster.
           </p>
-          <div className="pt-2">
+          <div className="pt-2 flex justify-center lg:justify-start">
             <a href="#how-it-works" className="inline-block text-[#FFFFFF] bg-emerald-500 hover:bg-emerald-600  font-semibold px-7 py-3.5 rounded-full text-sm transition-all duration-200 text-center active:scale-95 shadow-lg shadow-emerald-500/10">
               Get Started
             </a>
           </div>
         </div>
 
-        <div className="flex justify-center lg:justify-end w-full">
-          <div className="w-full max-w-[640px] bg-[#020d06] border-10 border-emerald-500/30 rounded-[24px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] grid grid-cols-[180px_1fr] font-sans overflow-hidden">
+        <div className="flex justify-center lg:justify-end w-full mt-10 lg:mt-0" aria-hidden="true">
+          <div className="w-full max-w-[640px] bg-[#020d06] border-[6px] sm:border-[10px] border-emerald-500/30 rounded-[24px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] flex flex-col sm:grid sm:grid-cols-[160px_1fr] md:grid-cols-[180px_1fr] font-sans overflow-hidden">
 
-            <div className="border-r border border-neutral-800/80 px-4 py-6 flex flex-col gap-6 bg-[#010804]">
-              <div className="text-xl font-bold italic text-white font-serif pl-2">
+            <div className="border-b sm:border-b-0 sm:border-r border-neutral-800/80 px-4 py-4 sm:py-6 flex flex-row sm:flex-col gap-4 sm:gap-6 bg-[#010804] overflow-x-auto overflow-y-hidden sm:overflow-visible items-center sm:items-stretch">
+              <div className="text-xl font-bold italic text-white font-serif pl-2 shrink-0">
                 osca
               </div>
 
-              <div className="flex flex-col gap-1.5 w-full">
+              <div className="flex flex-row sm:flex-col gap-1.5 w-full shrink-0">
                 <button className="flex items-center gap-2 w-full px-3 py-2 text-xs font-medium text-neutral-900 bg-white rounded-lg transition-colors">
                   <svg className="w-3.5 h-3.5 stroke-current fill-none" viewBox="0 0 24 24" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
@@ -113,7 +113,7 @@ export default function HeroSection() {
                   Your repositories
                 </p>
 
-                <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                   <div className="bg-[#020503]/40 border border-white/[0.08] rounded-xl p-3.5 flex flex-col gap-2">
                     <div className="w-6 h-6 bg-orange-500/20 text-orange-400 rounded-md flex items-center justify-center">
                       <svg className="w-3.5 h-3.5 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2">
@@ -178,7 +178,7 @@ export default function HeroSection() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3 w-full text-[11px] border-t border-neutral-900/60 pt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 w-full text-[11px] border-t border-neutral-900/60 pt-4">
                 <div>
                   <p className="text-neutral-400 font-medium">Top file type</p>
                   <p className="text-white mt-0.5">.tsx - 38%</p>
