@@ -1,6 +1,8 @@
+
 import HeroSection from "@/components/landing/hero-section";
 import FeaturesSection from "@/components/landing/features-section";
 import BenefitsSection from "@/components/landing/benefits-section";
+import Navbar from "@/components/landing/navbar";
 
 export default function Home() {
   return (
@@ -21,7 +23,6 @@ export default function Home() {
       <div className="relative w-full bg-[#020503] z-30">
         <BenefitsSection />
       </div>
-
     </main>
   );
 }

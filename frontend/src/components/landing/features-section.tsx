@@ -1,29 +1,43 @@
 import React from "react";
 
 export default function FeaturesSection() {
+  const cardBg = (src: any) => ({
+    backgroundImage: `url('${src}')`,
+  });
+
+  const cardBase =
+    "min-w-0 rounded-[24px] bg-cover bg-center text-[#031303] p-6 md:p-10 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 relative overflow-hidden";
+
   return (
     <section id="how-it-works" className="w-full h-full bg-[#020503] text-white flex items-center select-none relative overflow-hidden py-16 md:py-24">
+      {/* Background Pattern */}
       <div 
         className="absolute inset-0 opacity-[0.04] pointer-events-none z-0"
         aria-hidden="true"
         style={{
-          backgroundImage: `radial-gradient(circle at center, #ffffff 1px, transparent 1px)`,
-          backgroundSize: '24px 24px'
+          backgroundImage:
+            "radial-gradient(circle at center, #ffffff 1px, transparent 1px)",
+          backgroundSize: "24px 24px",
         }}
       />
 
-      <div className="relative w-full max-w-7xl mx-auto px-6 md:px-12 z-10">
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-8 mb-16">
-          <h2 className="font-serif italic font-medium text-3xl md:text-4xl lg:text-[48px] text-white leading-[1.2] max-w-[420px]">
+      <div className="relative w-full max-w-7xl mx-auto px-6 md:px-12 z-10 flex flex-col gap-12 md:gap-16">
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 md:gap-8">
+          <h2 className="font-serif italic font-medium text-3xl md:text-5xl lg:text-[56px] text-[#F0FFF2] leading-[1.1] max-w-[500px]">
             How does our product work?
           </h2>
-          <p className="w-full max-w-[460px] text-[#FFFFFF] font-normal text-base md:text-lg leading-relaxed">
-            From profile to perfect match in minutes, with a personalized contribution roadmap
+
+          <p className="w-full max-w-[460px] text-[#F0FFF2] font-normal text-lg md:text-xl leading-relaxed">
+            From profile to perfect match in minutes, with a personalized
+            contribution roadmap
           </p>
         </div>
 
         <div className="flex flex-col gap-4">
+          {/* Steps 1 & 2 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Step 1 */}
             <div className="bg-gradient-to-br from-[#e8f7ee] via-[#f0fdf4] to-[#cbe9d7] text-neutral-900 rounded-[24px] p-8 flex flex-col justify-between min-h-[180px] group transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
               <div>
                 <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-3 block">Step 1</span>
@@ -45,6 +59,7 @@ export default function FeaturesSection() {
               </div>
             </div>
 
+            {/* Step 2 */}
             <div className="bg-gradient-to-br from-[#e8f7ee] via-[#f0fdf4] to-[#cbe9d7] text-neutral-900 rounded-[24px] p-8 flex flex-col justify-between min-h-[180px] group transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
               <div className="relative z-10">
                 <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-3 block">Step 2</span>
@@ -75,49 +90,31 @@ export default function FeaturesSection() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="bg-gradient-to-br from-[#e8f7ee] via-[#f0fdf4] to-[#cbe9d7] text-neutral-900 rounded-[24px] p-8 min-h-[180px] flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
-              <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-3 block">Step 3</span>
-                <p className="font-medium text-lg leading-snug">
-                  Your repositories are analysed for multiple metrics to understand their needs
-                </p>
+          {/* Steps 3, 4, 5 generated via Array.map */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 auto-rows-fr max-w-6xl mx-auto w-full">
+            {[
+              { title: "Step 3", desc: "Your repositories are analyzed across multiple metrics to understand what they need" },
+              { title: "Step 4", desc: "Our matching engine pairs you with projects that align with your skills and interests" },
+              { title: "Step 5", desc: "Receive your personalized roadmap and start contributing immediately" }
+            ].map((step, i) => (
+              <div key={i} className={`${cardBase} min-h-[360px]`} style={cardBg(`group-${19-i}.png`)}>
+                <div className="max-w-[90%] flex flex-col gap-4">
+                  <span className="text-sm font-semibold uppercase tracking-wider text-[#031303] block">
+                    {step.title}
+                  </span>
+                  <p className="font-medium text-xl md:text-2xl leading-tight">
+                    {step.desc}
+                  </p>
+                </div>
+                
+                {/* Fixed: Moved the SVG decorative div inside the parent wrapper */}
+                <div className="absolute -bottom-6 -right-2 w-20 h-20 text-emerald-600/20 pointer-events-none rotate-12" aria-hidden="true">
+                  <svg fill="currentColor" viewBox="0 0 24 24" className="w-full h-full">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+                  </svg>
+                </div>
               </div>
-              <div className="absolute -bottom-6 -right-2 w-20 h-20 text-emerald-600/20 pointer-events-none rotate-12" aria-hidden="true">
-                <svg fill="currentColor" viewBox="0 0 24 24" className="w-full h-full">
-                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
-                </svg>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-[#e8f7ee] via-[#f0fdf4] to-[#cbe9d7] text-neutral-900 rounded-[24px] p-8 min-h-[180px] flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
-              <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-3 block">Step 4</span>
-                <p className="font-medium text-lg leading-snug">
-                  Our matching engine pairs you with projects that align with your skills & interests
-                </p>
-              </div>
-              <div className="absolute top-1/2 -right-6 w-16 h-16 text-emerald-700/10 pointer-events-none -translate-y-1/2" aria-hidden="true">
-                <svg fill="currentColor" viewBox="0 0 24 24" className="w-full h-full">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-                </svg>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-[#e8f7ee] via-[#f0fdf4] to-[#cbe9d7] text-neutral-900 rounded-[24px] p-8 min-h-[180px] flex flex-col justify-between md:col-span-2 lg:col-span-1 transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
-              <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-3 block">Step 5</span>
-                <p className="font-medium text-lg leading-snug">
-                  Receive a personalized roadmap and start contributing
-                </p>
-              </div>
-              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-32 h-10 bg-emerald-600/10 rounded-full blur-xl pointer-events-none" aria-hidden="true" />
-              <div className="absolute -bottom-3 right-3 w-14 h-14 text-emerald-600/20 pointer-events-none" aria-hidden="true">
-                <svg fill="currentColor" viewBox="0 0 24 24" className="w-full h-full">
-                  <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
-                </svg>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
