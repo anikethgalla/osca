@@ -1,5 +1,5 @@
 import { prisma } from '../../utils/prisma'
-import { redisClient } from '../../app'
+import { redisClient } from '../../utils/redis-client'
 
 interface DependencyStatus {
   status: 'UP' | 'DOWN'

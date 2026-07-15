@@ -1,34 +1,47 @@
-import { neo4jDriver } from '../utils/neo4j'
-import { config } from '../config'
+import { withSession } from '../utils/neo4j'
+
+export interface ContributorGraphStats {
+  repoCount: number
+  languageCount: number
+  frameworkCount: number
+  topicCount: number
+  avgStars: number
+  maxStars: number
+  collaboratorCount: number
+}
+
+// neo4j-driver returns Integer objects (not plain numbers) for count()/size(),
+// but plain floats for avg() — normalise both to JS numbers.
+const toNum = (value: unknown): number => {
+  if (value == null) return 0
+  const boxed = value as { toNumber?: () => number }
+  return typeof boxed.toNumber === 'function' ? boxed.toNumber() : Number(value)
+}
 
 export const Neo4jSyncService = {
   async syncUser(user: { githubId?: number; username: string }) {
     if (!user.githubId) return
 
-    const session = neo4jDriver.session({ database: config.neo4j.database })
-    try {
-      await session.run(
+    await withSession(session =>
+      session.run(
         `
         MERGE (u:User {githubId: $githubId})
         SET u.username = $username
         `,
         { githubId: user.githubId, username: user.username }
       )
-    } finally {
-      await session.close()
-    }
+    )
   },
 
-  async syncRepository(repo: { 
-    id: string; 
-    name: string; 
+  async syncRepository(repo: {
+    id: string;
+    name: string;
     owner: string;
     description?: string | null;
     stars?: number;
   }) {
-    const session = neo4jDriver.session({ database: config.neo4j.database })
-    try {
-      await session.run(
+    await withSession(session =>
+      session.run(
         `
         MERGE (r:Repository {id: $id})
         SET r.name = $name,
@@ -36,29 +49,26 @@ export const Neo4jSyncService = {
             r.description = $description,
             r.stars = $stars
         `,
-        { 
-          id: repo.id, 
-          name: repo.name, 
+        {
+          id: repo.id,
+          name: repo.name,
           owner: repo.owner,
           description: repo.description ?? '',
           stars: repo.stars ?? 0
         }
       )
-    } finally {
-      await session.close()
-    }
+    )
   },
 
   async syncInteraction(userGithubId: number, repoId: string, action: string) {
-    const session = neo4jDriver.session({ database: config.neo4j.database })
-    try {
-      // Basic interaction mapping (example)
-      let relType = 'INTERACTED_WITH'
-      if (action === 'STARRED') relType = 'STARRED'
-      else if (action === 'CONTRIBUTED_TO' || action === 'CONTRIBUTION') relType = 'CONTRIBUTED_TO'
-      else if (action === 'OWNS') relType = 'OWNS'
+    // Basic interaction mapping (example)
+    let relType = 'INTERACTED_WITH'
+    if (action === 'STARRED') relType = 'STARRED'
+    else if (action === 'CONTRIBUTED_TO' || action === 'CONTRIBUTION') relType = 'CONTRIBUTED_TO'
+    else if (action === 'OWNS') relType = 'OWNS'
 
-      await session.run(
+    await withSession(session =>
+      session.run(
         `
         MATCH (u:User {githubId: $userGithubId})
         MATCH (r:Repository {id: $repoId})
@@ -67,36 +77,30 @@ export const Neo4jSyncService = {
         `,
         { userGithubId, repoId }
       )
-    } finally {
-      await session.close()
-    }
+    )
   },
 
   // Mirrors syncInteraction's action->relType mapping so callers can undo a
   // toggle (e.g. unliking a repo) without needing to know the Cypher rel type.
   async removeInteraction(userGithubId: number, repoId: string, action: string) {
-    const session = neo4jDriver.session({ database: config.neo4j.database })
-    try {
-      let relType = 'INTERACTED_WITH'
-      if (action === 'STARRED') relType = 'STARRED'
-      else if (action === 'CONTRIBUTED_TO' || action === 'CONTRIBUTION') relType = 'CONTRIBUTED_TO'
-      else if (action === 'OWNS') relType = 'OWNS'
+    let relType = 'INTERACTED_WITH'
+    if (action === 'STARRED') relType = 'STARRED'
+    else if (action === 'CONTRIBUTED_TO' || action === 'CONTRIBUTION') relType = 'CONTRIBUTED_TO'
+    else if (action === 'OWNS') relType = 'OWNS'
 
-      await session.run(
+    await withSession(session =>
+      session.run(
         `
         MATCH (u:User {githubId: $userGithubId})-[rel:${relType}]->(r:Repository {id: $repoId})
         DELETE rel
         `,
         { userGithubId, repoId }
       )
-    } finally {
-      await session.close()
-    }
+    )
   },
 
   async syncUserSkills(userGithubId: number, skills: { name: string; proficiencyScore: number }[]) {
-    const session = neo4jDriver.session({ database: config.neo4j.database })
-    try {
+    await withSession(async session => {
       for (const skill of skills) {
         await session.run(
           `
@@ -108,14 +112,11 @@ export const Neo4jSyncService = {
           { userGithubId, skillName: skill.name, score: skill.proficiencyScore }
         )
       }
-    } finally {
-      await session.close()
-    }
+    })
   },
 
   async syncRepositoryTechStack(repoId: string, data: { languages: Record<string, number>, frameworks: string[], techStack: string[], ciCd: string[] }) {
-    const session = neo4jDriver.session({ database: config.neo4j.database })
-    try {
+    await withSession(async session => {
       // 1. Sync Languages
       for (const [lang, bytes] of Object.entries(data.languages)) {
         await session.run(
@@ -165,16 +166,13 @@ export const Neo4jSyncService = {
           { repoId, ci }
         )
       }
-    } finally {
-      await session.close()
-    }
+    })
   },
 
   async syncRepositoryTopics(repoId: string, topics: string[]) {
     if (!topics.length) return
 
-    const session = neo4jDriver.session({ database: config.neo4j.database })
-    try {
+    await withSession(async session => {
       for (const topic of topics) {
         await session.run(
           `
@@ -185,8 +183,71 @@ export const Neo4jSyncService = {
           { repoId, topic }
         )
       }
-    } finally {
-      await session.close()
-    }
+    })
+  },
+
+  // Aggregates everything the contributor-analysis scoring needs from the graph:
+  // the distinct Language/Framework/Topic spread and collaborator reach across
+  // every repo the user owns, starred, or contributed to.
+  async getContributorGraphStats(githubId: number): Promise<ContributorGraphStats> {
+    return withSession(async session => {
+      const result = await session.run(
+        `
+        MATCH (u:User {githubId: $githubId})
+        CALL {
+          WITH u
+          MATCH (u)-[:OWNS|STARRED|CONTRIBUTED_TO]->(r:Repository)
+          RETURN collect(DISTINCT r) AS repos
+        }
+        CALL {
+          WITH repos
+          UNWIND repos AS r
+          OPTIONAL MATCH (r)-[:USES_LANGUAGE]->(l:Language)
+          RETURN count(DISTINCT l) AS languageCount
+        }
+        CALL {
+          WITH repos
+          UNWIND repos AS r
+          OPTIONAL MATCH (r)-[:USES_FRAMEWORK]->(f:Framework)
+          RETURN count(DISTINCT f) AS frameworkCount
+        }
+        CALL {
+          WITH repos
+          UNWIND repos AS r
+          OPTIONAL MATCH (r)-[:HAS_TOPIC]->(t:Topic)
+          RETURN count(DISTINCT t) AS topicCount
+        }
+        CALL {
+          WITH repos
+          UNWIND repos AS r
+          RETURN avg(r.stars) AS avgStars, max(r.stars) AS maxStars
+        }
+        CALL {
+          WITH u, repos
+          UNWIND repos AS r
+          MATCH (other:User)-[:OWNS|STARRED|CONTRIBUTED_TO]->(r)
+          WHERE other <> u
+          RETURN count(DISTINCT other) AS collaboratorCount
+        }
+        RETURN size(repos) AS repoCount, languageCount, frameworkCount, topicCount, avgStars, maxStars, collaboratorCount
+        `,
+        { githubId }
+      )
+
+      const record = result.records[0]
+      if (!record) {
+        return { repoCount: 0, languageCount: 0, frameworkCount: 0, topicCount: 0, avgStars: 0, maxStars: 0, collaboratorCount: 0 }
+      }
+
+      return {
+        repoCount: toNum(record.get('repoCount')),
+        languageCount: toNum(record.get('languageCount')),
+        frameworkCount: toNum(record.get('frameworkCount')),
+        topicCount: toNum(record.get('topicCount')),
+        avgStars: toNum(record.get('avgStars')),
+        maxStars: toNum(record.get('maxStars')),
+        collaboratorCount: toNum(record.get('collaboratorCount'))
+      }
+    })
   }
 }

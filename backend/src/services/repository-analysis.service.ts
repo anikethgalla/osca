@@ -116,7 +116,6 @@ const fetchFullTree = async (
   }
 
   if (fullTree && !fullTree.truncated) {
-    console.log(`[RepoService] Full recursive tree fetched (${fullTree.tree.length} entries).`)
     return fullTree.tree
   }
 
@@ -168,22 +167,19 @@ const fetchFullTree = async (
     }
   }
 
-  console.log(
-    `[RepoService] Assembled tree from ${topLevelDirs.length} subtrees: ${allEntries.length} total entries.`
-  )
+
   return allEntries
 }
 
 const analyzeRepository = async (
   url: string,
   userId: string,
-  onProgress: ProgressCallback = noopProgress
+  onProgress: ProgressCallback = noopProgress,
+  force: boolean = false
 ) => {
-  console.log(`[RepoService] Starting analysis for ${url}`)
   await onProgress(5, 'Validating repository URL...')
   const { owner, repo } = parseGithubRepoUrl(url)
   const fullName = `${owner}/${repo}`
-  console.log(`[RepoService] Parsed URL: owner=${owner}, repo=${repo}`)
 
   // Check if repository already exists and has folderStructure
   const existingRepo = await prisma.repository.findUnique({
@@ -195,18 +191,17 @@ const analyzeRepository = async (
     }
   })
 
-  // User requested to re-analyze even if the repository exists, so we proceed without early exit.
+  // If we already have the folderStructure and force isn't true, skip analysis
+  if (existingRepo && existingRepo.folderStructure && !force) {
+
+    await onProgress(100, 'Repository already analyzed.')
+    return existingRepo
+  }
 
   await onProgress(8, 'Fetching user credentials...')
   const accessToken = await getGithubAccessToken(userId)
-  console.log(`[RepoService] Retrieved GitHub token for user ${userId}`)
-
-  console.log(`[RepoService] Fetching repository data from GitHub API...`)
   const analysis = await analyzeGithubRepo(owner, repo, accessToken, onProgress)
-  console.log(`[RepoService] GitHub API analysis complete for ${analysis.fullName}`)
-
   await onProgress(80, 'Saving repository data...')
-  console.log(`[RepoService] Saving repository ${analysis.fullName} to database...`)
 
   // Only persist folderStructure and dependencies if they are actually populated
   // to prevent a failed analysis from locking out future re-analysis attempts
@@ -267,7 +262,7 @@ const analyzeRepository = async (
   }
 
   await onProgress(100, 'Repository analysis complete!')
-  console.log(`[RepoService] Repository ${saved.fullName} successfully saved to database.`)
+
   return saved
 }
 
