@@ -1,0 +1,139 @@
+"use client"
+
+import React, { useState, useEffect } from 'react'
+import { FeedService } from '@/services/feed.service'
+import { FeedItem } from '@/types/feed'
+import { FeedCard } from './FeedCard'
+import { useAuth } from '@/context/auth-context'
+import { Button } from '@/components/ui/button'
+import { Loader2, RefreshCw } from 'lucide-react'
+
+export function FeedList() {
+  const { token } = useAuth()
+  const [items, setItems] = useState<FeedItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
+  // Pagination state
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+
+  const fetchFeed = async (pageToFetch: number, isInitial = false) => {
+    if (!token) return
+    
+    try {
+      if (isInitial) {
+        setLoading(true)
+        setError(null)
+      } else {
+        setLoadingMore(true)
+      }
+      
+      const response = await FeedService.getFeed(token, pageToFetch, 10)
+      
+      if (isInitial) {
+        setItems(response.data)
+      } else {
+        setItems(prev => [...prev, ...response.data])
+      }
+      
+      setHasMore(response.meta.page < response.meta.totalPages)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load feed')
+    } finally {
+      setLoading(false)
+      setLoadingMore(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchFeed(1, true)
+  }, [token])
+
+  const handleLoadMore = () => {
+    if (!loadingMore && hasMore) {
+      const nextPage = page + 1
+      setPage(nextPage)
+      fetchFeed(nextPage)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4" />
+        <p className="text-neutral-400">Curating repositories for your skills...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="bg-red-500/10 text-red-400 p-4 rounded-xl border border-red-500/20 max-w-md">
+          <p className="font-medium mb-2">Something went wrong</p>
+          <p className="text-sm opacity-80">{error}</p>
+          <Button 
+            variant="outline" 
+            onClick={() => fetchFeed(1, true)}
+            className="mt-4 border-red-500/20 hover:bg-red-500/20"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" /> Try again
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-white/[0.1] rounded-xl bg-white/[0.01]">
+        <h3 className="text-xl font-bold text-white mb-2">Your feed is empty</h3>
+        <p className="text-neutral-400 max-w-md">
+          We couldn't find any repositories matching your exact skill profile right now. Try updating your profile or exploring all repositories.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      <div className="space-y-2 mb-8">
+        <h1 className="text-3xl font-bold text-white">Your Feed</h1>
+        <p className="text-neutral-400">Repositories recommended specifically for your skill set.</p>
+      </div>
+      
+      <div className="space-y-6">
+        {items.map((item) => (
+          <FeedCard key={item.id} item={item} />
+        ))}
+      </div>
+      
+      {hasMore && (
+        <div className="mt-8 flex justify-center">
+          <Button 
+            variant="outline" 
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            className="border-white/[0.1] text-white hover:bg-white/[0.05] hover:text-white"
+          >
+            {loadingMore ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Loading...
+              </>
+            ) : (
+              'Load more repositories'
+            )}
+          </Button>
+        </div>
+      )}
+      
+      {!hasMore && items.length > 0 && (
+        <div className="mt-8 text-center text-neutral-500 text-sm">
+          You've reached the end of your recommendations for now.
+        </div>
+      )}
+    </div>
+  )
+}
