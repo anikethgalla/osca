@@ -33,7 +33,7 @@ const redirectToGithub = (req: Request, res: Response): void => {
     maxAge: 10 * 60 * 1000 // 10 minutes
   })
 
-  let authorizeUrl = `https://github.com/login/oauth/authorize?client_id=${config.githubClientId}&scope=user,repo&state=${state}`
+  let authorizeUrl = `https://github.com/login/oauth/authorize?client_id=${config.githubClientId}&scope=read:user,user:email&state=${state}`
   if (config.githubCallbackUrl !== '') {
     authorizeUrl += `&redirect_uri=${encodeURIComponent(config.githubCallbackUrl)}`
   }
@@ -42,8 +42,14 @@ const redirectToGithub = (req: Request, res: Response): void => {
 
 // #4: Callback verifies `state` against cookie before exchanging code
 const handleGithubCallback = asyncHandler(async (req: Request, res: Response) => {
-  const { code, state } = req.query
+  const { code, state, error, error_description } = req.query
   const cookieState = req.cookies?.oauth_state as string | undefined
+
+  if (error) {
+    const errorMsg = error_description ? String(error_description) : 'Authentication failed'
+    res.redirect(`${config.frontendUrl}/login?error=${String(error)}&error_description=${encodeURIComponent(errorMsg)}`)
+    return
+  }
 
   // Verify state to prevent CSRF / OAuth hijacking
   if (typeof state !== 'string' || !cookieState || state !== cookieState) {

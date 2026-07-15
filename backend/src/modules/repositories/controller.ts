@@ -4,10 +4,11 @@ import { sendResponse } from '../../utils/send-response'
 import { RequestWithUser } from '../../middlewares/auth.middleware'
 import { RequestWithPaginationAndUser } from '../../middlewares/pagination.middleware'
 import { AppError, assertFound } from '../../lib/errors'
-import { resolveRepositoryUrl } from '../../lib/github'
+import { resolveRepositoryUrl, getGithubIdForUser } from '../../lib/github'
 import { JobEnqueueService } from '../../services/job-enqueue.service'
 import { RepositoryService } from './service'
 import { InteractionService } from '../../services/interaction.service'
+import { Neo4jSyncService } from '../../services/neo4j-sync.service'
 import { githubGetJson, githubTryGetRaw, githubGraphQL } from '../../lib/github/client'
 import { asyncHandler } from '../../utils/async-handler'
 import { IGNORED_DIRS, IGNORED_FILES } from '../../lib/github/utils/constants'
@@ -161,8 +162,8 @@ const getRepositoryByFullName = asyncHandler(async (req: RequestWithUser, res: R
 
       try {
         treeRes = await githubGetJson<any>(`${repoPath}/git/trees/${branch}?recursive=1`, account.accessToken)
-      } catch {
-        console.warn(`[RepoPreview] Recursive tree fetch failed for ${owner}/${repo}, falling back to shallow.`)
+      } catch (err) {
+        console.warn(`[RepoPreview] Recursive tree fetch failed for ${owner}/${repo}, falling back to shallow.`, err)
         treeRes = await githubGetJson<any>(`${repoPath}/git/trees/${branch}`, account.accessToken)
         isShallow = true
       }
@@ -239,7 +240,16 @@ const listRepositories = asyncHandler(async (req: RequestWithPaginationAndUser, 
 
   const [total, repos] = await Promise.all([
     prisma.repository.count({ where: { hidden: false } }),
-    prisma.repository.findMany({ where: { hidden: false }, skip, take })
+    prisma.repository.findMany({
+      where: { hidden: false },
+      skip,
+      take,
+      omit: {
+        folderStructure: true,
+        dependencies: true,
+        ciCd: false
+      }
+    })
   ])
 
   sendResponse(res, 200, true, 'Repositories retrieved successfully', repos, {
@@ -347,6 +357,15 @@ const toggleRepositoryLike = asyncHandler(async (req: RequestWithUser, res: Resp
 
   if (existingLike) {
     await prisma.repositoryLike.delete({ where: { id: existingLike.id } })
+
+    // Best-effort: keep the Neo4j graph in sync, but don't fail the unlike if Neo4j is unavailable
+    const githubId = await getGithubIdForUser(userId)
+    if (githubId !== null) {
+      Neo4jSyncService.removeInteraction(githubId, repositoryId, 'REPOSITORY_LIKE').catch((error) => {
+        console.error(`[Neo4jSync] Failed to remove interaction for user ${userId}, repo ${repositoryId}:`, error)
+      })
+    }
+
     sendResponse(res, 200, true, 'Repository unliked successfully')
     return
   }
@@ -355,7 +374,7 @@ const toggleRepositoryLike = asyncHandler(async (req: RequestWithUser, res: Resp
     data: { userId, repositoryId }
   })
 
-  // Automatically log interaction
+  // Automatically log interaction (also syncs an INTERACTED_WITH edge to Neo4j)
   await InteractionService.logInteraction(userId, repositoryId, 'REPOSITORY_LIKE')
 
   sendResponse(res, 201, true, 'Repository liked successfully', like)

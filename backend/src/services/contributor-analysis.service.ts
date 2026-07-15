@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '../utils/prisma'
 import { assertFound } from '../lib/errors'
+import { Neo4jSyncService } from './neo4j-sync.service'
 import {
   buildSkillList,
   detectNpmFrameworks,
@@ -24,6 +25,47 @@ interface GitHubRepo {
   size: number
 }
 
+interface GitHubStarredRepo {
+  id: number
+  full_name: string
+}
+
+// Caps how many pages of /user/starred we walk (100 per page) so a user with
+// thousands of stars can't blow the GitHub rate limit or stall the job queue.
+const MAX_STARRED_PAGES = 5
+
+// Syncs STARRED edges into Neo4j for the subset of the user's GitHub stars
+// that we already track as Repository rows in Postgres. We deliberately don't
+// ingest brand-new repos here — that's the job of the repository-analysis
+// pipeline; this only wires up the edge for repos already known to us.
+const syncStarredRepositories = async (userId: string, githubId: number, username: string): Promise<number> => {
+  const accessToken = await getGithubAccessToken(userId)
+
+  const starredGithubIds: number[] = []
+  for (let page = 1; page <= MAX_STARRED_PAGES; page++) {
+    const repos = await githubGetJson<GitHubStarredRepo[]>(`/user/starred?per_page=100&page=${page}`, accessToken)
+    if (!Array.isArray(repos) || repos.length === 0) break
+    starredGithubIds.push(...repos.map((repo) => repo.id))
+    if (repos.length < 100) break
+  }
+
+  if (starredGithubIds.length === 0) return 0
+
+  const trackedRepos = await prisma.repository.findMany({
+    where: { githubId: { in: starredGithubIds } },
+    select: { id: true }
+  })
+
+  if (trackedRepos.length === 0) return 0
+
+  await Neo4jSyncService.syncUser({ githubId, username })
+  for (const repo of trackedRepos) {
+    await Neo4jSyncService.syncInteraction(githubId, repo.id, 'STARRED')
+  }
+
+  return trackedRepos.length
+}
+
 const toContributorExperience = (skills: Skill[]): Prisma.InputJsonValue => ({
   skills: skills.map((skill) => ({
     name: skill.name,
@@ -38,6 +80,15 @@ interface GitHubStatsResponse {
         totalCommitContributions: number
         totalPullRequestContributions: number
         totalPullRequestReviewContributions: number
+        commitContributionsByRepository: {
+          repository: {
+            nameWithOwner: string
+            isFork: boolean
+            languages: {
+              nodes: { name: string }[]
+            }
+          }
+        }[]
       }
       pullRequests: {
         nodes: {
@@ -59,6 +110,17 @@ const fetchAdvancedStats = async (token: string) => {
             totalCommitContributions
             totalPullRequestContributions
             totalPullRequestReviewContributions
+            commitContributionsByRepository(maxRepositories: 25) {
+              repository {
+                nameWithOwner
+                isFork
+                languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
+                  nodes {
+                    name
+                  }
+                }
+              }
+            }
           }
           pullRequests(first: 30, states: MERGED, orderBy: {field: CREATED_AT, direction: DESC}) {
             nodes {
@@ -98,11 +160,19 @@ const fetchAdvancedStats = async (token: string) => {
     const reviewRatio = reviews / prs
     const codeReviewScore = Math.min(5.0, 3.0 + (reviewRatio * 1.5))
 
+    const contributedRepos = (viewer.contributionsCollection.commitContributionsByRepository || [])
+      .filter((entry) => !entry.repository.isFork)
+      .map((entry) => ({
+        fullName: entry.repository.nameWithOwner,
+        languages: entry.repository.languages.nodes.map((n) => n.name)
+      }))
+
     return {
       linesAdded: totalAdditions > 0 ? totalAdditions : 0,
       avgPrCycleTime: avgPrCycleTimeDays,
       codeReviewScore: codeReviewScore,
-      totalCommits: viewer.contributionsCollection.totalCommitContributions
+      totalCommits: viewer.contributionsCollection.totalCommitContributions,
+      contributedRepos
     }
   } catch (err) {
     console.error('Failed to fetch advanced stats:', err)
@@ -121,11 +191,11 @@ const analyzeProfile = async (
 
   const accessToken = await getGithubAccessToken(userId)
 
-  await onProgress(10, 'Starting profile analysis...')
-  const skills = await analyzeGithubProfile(accessToken, onProgress)
-
-  await onProgress(85, 'Fetching advanced contribution statistics...')
+  await onProgress(8, 'Fetching advanced contribution statistics...')
   const advancedStats = await fetchAdvancedStats(accessToken)
+
+  await onProgress(10, 'Starting profile analysis...')
+  const skills = await analyzeGithubProfile(accessToken, onProgress, advancedStats?.contributedRepos ?? [])
 
   await onProgress(90, 'Saving extracted skills to database...')
 
@@ -220,7 +290,8 @@ const analyzeProfile = async (
 
 const analyzeGithubProfile = async (
   accessToken: string,
-  onProgress: ProgressCallback = noopProgress
+  onProgress: ProgressCallback = noopProgress,
+  contributedRepos: { fullName: string; languages: string[] }[] = []
 ): Promise<Skill[]> => {
   await onProgress(15, 'Fetching repositories from GitHub...')
 
@@ -229,7 +300,18 @@ const analyzeGithubProfile = async (
     accessToken
   )
 
-  const reposToAnalyze = repos.filter((repo) => !repo.fork).slice(0, 30)
+  const ownedRepos = repos.filter((repo) => !repo.fork).slice(0, 30)
+  const ownedFullNames = new Set(ownedRepos.map((repo) => repo.full_name))
+
+  // Include repos the user has pushed commits to but doesn't own (e.g. OSS PRs
+  // into other orgs' repos), so the skill profile reflects contribution activity
+  // rather than only what the user happens to own.
+  const externalRepos: GitHubRepo[] = contributedRepos
+    .filter((repo) => !ownedFullNames.has(repo.fullName))
+    .slice(0, 15)
+    .map((repo) => ({ name: repo.fullName, full_name: repo.fullName, language: null, fork: false, size: 0 }))
+
+  const reposToAnalyze = [...ownedRepos, ...externalRepos]
   const batchSize = 10
   const totalBatches = Math.ceil(reposToAnalyze.length / batchSize) || 1
   const languageTotals: Record<string, number> = {}
@@ -249,8 +331,8 @@ const analyzeGithubProfile = async (
         for (const [lang, bytes] of Object.entries(languages)) {
           languageTotals[lang] = (languageTotals[lang] ?? 0) + bytes
         }
-      } catch {
-        // Skip repos we can't access
+      } catch (err) {
+        console.error(`[ContributorAnalysis] Failed to fetch languages for ${repo.full_name}:`, err)
       }
 
       const packageJson = await githubTryGetRaw(`/repos/${repo.full_name}/contents/package.json`, accessToken)
@@ -270,5 +352,6 @@ const analyzeGithubProfile = async (
 }
 
 export const ContributorAnalysisService = {
-  analyzeProfile
+  analyzeProfile,
+  syncStarredRepositories
 }
