@@ -38,7 +38,7 @@ export function FeedList() {
         setItems(prev => [...prev, ...response.data])
       }
       
-      setHasMore(response.meta.page < response.meta.totalPages)
+      setHasMore(response.pagination.page < response.pagination.totalPages)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load feed')
     } finally {
@@ -98,15 +98,15 @@ export function FeedList() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full">
       <div className="space-y-2 mb-8">
         <h1 className="text-3xl font-bold text-white">Your Feed</h1>
         <p className="text-neutral-400">Repositories recommended specifically for your skill set.</p>
       </div>
       
-      <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {items.map((item) => (
-          <FeedCard key={item.id} item={item} />
+          <FeedCard key={item.repository.id} item={item} />
         ))}
       </div>
       

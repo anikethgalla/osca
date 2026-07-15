@@ -16,24 +16,27 @@ export interface Repository {
   updatedAt: string;
 }
 
-export interface FeedItem {
-  id: string;
-  userId: string;
+export interface ScoreInfo {
   repositoryId: string;
-  fitScore: number;
-  explanation: string;
-  roadmap: any;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
+  totalScore: number;
+  breakdown: {
+    contentScore: number;
+    collabScore: number;
+    topicScore: number;
+    fallback?: boolean;
+  };
+}
+
+export interface FeedItem {
   repository: Repository;
+  scoreInfo: ScoreInfo;
 }
 
 export interface FeedResponse {
   success: boolean;
   message: string;
   data: FeedItem[];
-  meta: {
+  pagination: {
     page: number;
     limit: number;
     total: number;

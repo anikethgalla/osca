@@ -1,7 +1,6 @@
 import React from 'react'
 import Link from 'next/link'
 import { FeedItem } from '@/types/feed'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Star, GitFork, AlertCircle, ExternalLink, ArrowRight } from 'lucide-react'
@@ -13,40 +12,43 @@ interface FeedCardProps {
 export function FeedCard({ item }: FeedCardProps) {
   const repo = item.repository
   
-  // Format score to percentage
-  const fitPercentage = Math.round(item.fitScore * 100)
+  // Calculate display score (capping at 100 for the width bar if needed)
+  const score = Math.round(item.scoreInfo.totalScore)
   
   return (
-    <Card className="bg-white/[0.02] border-white/[0.05] hover:border-white/[0.1] transition-all duration-300 mb-6 overflow-hidden">
-      <div className="h-1 w-full bg-gradient-to-r from-emerald-500 to-emerald-900" style={{ width: `${fitPercentage}%` }} />
+    <div className="bg-[#121212] rounded-2xl border border-white/[0.05] hover:border-white/[0.1] transition-all duration-300 mb-6 overflow-hidden flex flex-col">
+      <div className="h-1 w-full bg-gradient-to-r from-emerald-500 to-emerald-900" style={{ width: `${Math.min(score, 100)}%` }} />
       
-      <CardHeader className="pb-3">
+      <div className="p-6 pb-3">
         <div className="flex justify-between items-start gap-4">
           <div>
-            <CardTitle className="text-xl font-bold text-white flex items-center gap-2">
+            <h3 className="text-xl font-bold text-white flex items-center gap-2">
               <Link href={`/dashboard/repository/${repo.id}`} className="hover:text-emerald-400 transition-colors">
                 {repo.fullName}
               </Link>
-            </CardTitle>
-            <CardDescription className="text-neutral-400 mt-2 line-clamp-2">
+            </h3>
+            <p className="text-neutral-400 mt-2 line-clamp-2 text-sm">
               {repo.description || "No description provided."}
-            </CardDescription>
+            </p>
           </div>
           
           <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 px-3 py-1 flex-shrink-0 text-sm font-mono">
-            {fitPercentage}% Match
+            Score: {score}
           </Badge>
         </div>
-      </CardHeader>
+      </div>
       
-      <CardContent className="space-y-4">
+      <div className="p-6 pt-0 space-y-4">
         {/* Why it's a match */}
         <div className="bg-black/40 rounded-lg p-4 border border-white/[0.02]">
           <h4 className="text-sm font-medium text-emerald-500 mb-1 flex items-center gap-2">
             <SparklesIcon className="w-4 h-4" /> Why it's a match
           </h4>
           <p className="text-sm text-neutral-300 leading-relaxed">
-            {item.explanation}
+            {item.scoreInfo.breakdown.fallback 
+              ? "Recommended based on community popularity." 
+              : `Matched based on skill alignment (${Math.round(item.scoreInfo.breakdown.contentScore)}), collaboration network (${Math.round(item.scoreInfo.breakdown.collabScore)}), and shared topics (${Math.round(item.scoreInfo.breakdown.topicScore)}).`
+            }
           </p>
         </div>
         
@@ -63,21 +65,21 @@ export function FeedCard({ item }: FeedCardProps) {
             </Badge>
           ))}
         </div>
-      </CardContent>
+      </div>
       
-      <CardFooter className="pt-2 border-t border-white/[0.05] flex justify-between items-center text-sm text-neutral-500">
+      <div className="p-6 pt-4 border-t border-white/[0.05] flex justify-between items-center text-sm text-neutral-500 mt-auto">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1">
             <Star className="w-4 h-4" />
-            <span>{repo.stars.toLocaleString()}</span>
+            <span>{(repo.stars || 0).toLocaleString()}</span>
           </div>
           <div className="flex items-center gap-1">
             <GitFork className="w-4 h-4" />
-            <span>{repo.forks.toLocaleString()}</span>
+            <span>{(repo.forks || 0).toLocaleString()}</span>
           </div>
           <div className="flex items-center gap-1">
             <AlertCircle className="w-4 h-4" />
-            <span>{repo.openIssuesCount.toLocaleString()} issues</span>
+            <span>{(repo.openIssuesCount || 0).toLocaleString()} issues</span>
           </div>
         </div>
         
@@ -93,8 +95,8 @@ export function FeedCard({ item }: FeedCardProps) {
             </Link>
           </Button>
         </div>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   )
 }
 
