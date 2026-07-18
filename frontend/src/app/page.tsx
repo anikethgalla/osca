@@ -2,7 +2,6 @@
 import HeroSection from "@/components/landing/hero-section";
 import FeaturesSection from "@/components/landing/features-section";
 import BenefitsSection from "@/components/landing/benefits-section";
-import Navbar from "@/components/landing/navbar";
 
 export default function Home() {
   return (

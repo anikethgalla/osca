@@ -91,7 +91,7 @@ export function FeedList() {
       <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-white/[0.1] rounded-xl bg-white/[0.01]">
         <h3 className="text-xl font-bold text-white mb-2">Your feed is empty</h3>
         <p className="text-neutral-400 max-w-md">
-          We couldn't find any repositories matching your exact skill profile right now. Try updating your profile or exploring all repositories.
+          We couldn&apos;t find any repositories matching your exact skill profile right now. Try updating your profile or exploring all repositories.
         </p>
       </div>
     )
@@ -99,9 +99,9 @@ export function FeedList() {
 
   return (
     <div className="w-full">
-      <div className="space-y-2 mb-8">
-        <h1 className="text-3xl font-bold text-white">Your Feed</h1>
-        <p className="text-neutral-400">Repositories recommended specifically for your skill set.</p>
+      <div className="space-y-2 mb-10">
+        <h1 className="text-[40px] font-serif italic text-white font-medium tracking-wide">Your Feed</h1>
+        <p className="text-xl font-bold text-white">Repositories recommended specifically for your skill set</p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -111,16 +111,15 @@ export function FeedList() {
       </div>
       
       {hasMore && (
-        <div className="mt-8 flex justify-center">
+        <div className="mt-10 mb-8 flex justify-center">
           <Button 
-            variant="outline" 
             onClick={handleLoadMore}
             disabled={loadingMore}
-            className="border-white/[0.1] text-white hover:bg-white/[0.05] hover:text-white"
+            className="bg-white hover:bg-neutral-200 text-black font-semibold rounded-full px-8 py-6 text-[15px]"
           >
             {loadingMore ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Loading...
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Loading...
               </>
             ) : (
               'Load more repositories'
@@ -131,7 +130,7 @@ export function FeedList() {
       
       {!hasMore && items.length > 0 && (
         <div className="mt-8 text-center text-neutral-500 text-sm">
-          You've reached the end of your recommendations for now.
+          You&apos;ve reached the end of your recommendations for now.
         </div>
       )}
     </div>

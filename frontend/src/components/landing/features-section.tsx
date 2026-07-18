@@ -1,7 +1,7 @@
 import React from "react";
 
 export default function FeaturesSection() {
-  const cardBg = (src: any) => ({
+  const cardBg = (src: string) => ({
     backgroundImage: `url('${src}')`,
   });
 
